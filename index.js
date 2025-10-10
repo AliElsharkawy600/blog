@@ -5,6 +5,9 @@ const dotenv = require('dotenv')
 const usersRouter = require("./routers/users");
 const postsRouter = require("./routers/posts");
 
+const errorHandler = require('./middlewares/errorHandler');
+const rateLimiter = require('./middlewares/rateLimiter');
+
 const app = express();
 
 
@@ -12,13 +15,18 @@ const app = express();
 // middleware to parse json body
 app.use(express.json());
 app.use(cors());
-
+app.use(rateLimiter)
 
 dotenv.config();
 
 // routes
 app.use("/users", usersRouter);
 app.use('/posts',postsRouter)
+
+
+
+// global Error Handeller 
+app.use(errorHandler);
 
 
 const PORT = process.env.PORT;

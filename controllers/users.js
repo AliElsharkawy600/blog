@@ -1,5 +1,6 @@
 const User = require("../models/users");
 const { isValidObjectId } = require("mongoose");
+const CustomError = require("../utils/customError");
 
 const getAllUsers = async (req, res) => {
   const { page = 1, limit = 10 } = req.query;
@@ -33,16 +34,13 @@ const getUserById = async (req, res) => {
   const { id } = req.params;
 
   if (!isValidObjectId(id)) {
-    return res.status(400).json({
-      status: "error",
-      message: "Invalid id",
-    });
+    throw new CustomError("Invalid ID", 400);
   }
 
   const user = await User.findOne({ _id: id }, { password: 0 });
 
   if (!user) {
-    return res.status(404).json({ status: "error", message: "User not found" });
+    throw new CustomError("User Not Found", 404);
   }
   res.status(200).json({
     status: "success",
@@ -54,11 +52,14 @@ const getUserById = async (req, res) => {
 const createUser = async (req, res) => {
   const { name, email, password } = req.body;
 
-  if (!name || !email || !password) {
-    return res.status(400).json({
-      status: "error",
-      message: "Name, email and password are required",
-    });
+  if (!name) {
+    throw new CustomError("Name is required", 400);
+  }
+  if (!email) {
+    throw new CustomError("email is required", 400);
+  }
+  if (!password) {
+    throw new CustomError("password is required", 400);
   }
 
   const newUser = await User.create({ name, email, password });
@@ -75,10 +76,7 @@ const createUser = async (req, res) => {
 const updateUser = async (req, res) => {
   const { id } = req.params;
   if (!isValidObjectId(id)) {
-    return res.status(400).json({
-      status: "error",
-      message: "Invalid id",
-    });
+    throw new CustomError("Invalid ID", 400);
   }
   const { name, email } = req.body;
 
@@ -91,17 +89,14 @@ const updateUser = async (req, res) => {
   );
 
   if (!user) {
-    return res.status(404).json({
-      status: "error",
-      message: "User not found",
-    });
+    throw new CustomError("User Not Found", 404);
   }
 
   const savedUser = user.toObject();
   delete savedUser.password;
 
   return res.status(200).json({
-    ststus: "success",
+    status: "success",
     message: "User updated successfully",
     data: savedUser,
   });
@@ -110,19 +105,13 @@ const updateUser = async (req, res) => {
 const deleteUser = async (req, res) => {
   const { id } = req.params;
   if (!isValidObjectId(id)) {
-    return res.status(400).json({
-      status: "error",
-      message: "Invalid id",
-    });
+    throw new CustomError("Invalid ID", 400);
   }
 
   const user = await User.findOneAndDelete({ _id: id });
 
   if (!user) {
-    return res.status(404).json({
-      statsu: "error",
-      message: "User Not Found",
-    });
+   throw new CustomError("User Not Found", 404);
   }
 
   return res.status(204).send();

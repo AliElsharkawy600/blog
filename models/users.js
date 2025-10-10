@@ -9,6 +9,7 @@ const userSchema = new mongoose.Schema(
     email: {
       type: String,
       required: true,
+      unique:true,
       validate: {
         validator: function (value) {
           // Simple email validation regex
@@ -36,6 +37,9 @@ const userSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
+
+userSchema.index({ email: 1 }, { unique: true });
+
 
 const User = mongoose.model("User", userSchema);
 module.exports = User;
