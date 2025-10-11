@@ -1,7 +1,8 @@
 const Post = require("./../models/posts");
-const CustomError = require("../utils/customError")
+const CustomError = require("../utils/customError");
+
 const createPost = async (req, res) => {
-  const posts = await Post.create({...req.body, userId: req.user.userId});
+  const posts = await Post.create({ ...req.body, userId: req.user.userId });
   res.status(201).json({
     status: "success",
     message: "Posts Created successfully",
@@ -16,22 +17,16 @@ const getPosts = async (req, res) => {
   const totalPromise = Post.countDocuments();
   const postsPromise = Post.find().skip(skip).limit(limit);
 
-  
   const [posts, total] = await Promise.all([postsPromise, totalPromise]);
-  
-  // adding is the owner of the post
-  const postsWithOwner = posts.map(post =>({
-    ...post.toObject(),
-    isOwner: post.userId.toString() === req.user.userId
-  }))
 
-  console.log(postsWithOwner);
+  // adding is the owner of the post
+  const postsWithOwner = posts.map((post) => ({
+    ...post.toObject(),
+    isOwner: post.userId.toString() === req.user.userId,
+  }));
 
   if (!posts) {
-    return res.status(404).json({
-      status: "failure",
-      message: "No posts Found",
-    });
+    throw new CustomError("No posts Found", 404);
   }
 
   const pagination = {
@@ -55,17 +50,14 @@ const getPost = async (req, res) => {
     select: "name email role",
   });
   if (!post) {
-    return res.status(404).json({
-      status: "failure",
-      message: "No posts Found",
-    });
+    throw new CustomError("No posts Found", 404);
   }
 
-    // adding is the owner of the post
+  // adding is the owner of the post
   const postsWithOwner = {
     ...post.toObject(),
-    isOwner: post.userId._id.toString() === req.user.userId
-  }
+    isOwner: post.userId._id.toString() === req.user.userId,
+  };
 
   res.status(200).json({
     status: "success",
@@ -75,25 +67,24 @@ const getPost = async (req, res) => {
 };
 
 const updatePost = async (req, res) => {
-
   const post = await Post.findById(req.params.id).exec();
 
   if (!post) {
-    return res.status(404).json({
-      status: "failure",
-      message: "No posts Found",
-    });
+    throw new CustomError("No posts Found", 404);
   }
 
-  if(post.userId.toString() !== req.user.userId){
+  if (post.userId.toString() !== req.user.userId) {
     throw new CustomError("You cannot update the post you did not create", 400);
   }
 
-  const updatedPost = await Post.findByIdAndUpdate(req.params.id, {...req.body, userId:req.user.userId}, {
-    new: true,
-    runValidators: true,
-  });
-
+  const updatedPost = await Post.findByIdAndUpdate(
+    req.params.id,
+    { ...req.body, userId: req.user.userId },
+    {
+      new: true,
+      runValidators: true,
+    }
+  );
 
   res.status(200).json({
     status: "success",
@@ -103,22 +94,17 @@ const updatePost = async (req, res) => {
 };
 
 const deletePost = async (req, res) => {
-
-
   const post = await Post.findById(req.params.id).exec();
 
   if (!post) {
-    return res.status(404).json({
-      status: "failure",
-      message: "No posts Found",
-    });
+    throw new CustomError("No posts Found", 404);
   }
 
-  if(post.userId.toString() !== req.user.userId){
+  if (post.userId.toString() !== req.user.userId) {
     throw new CustomError("You cannot delete the post you did not create", 400);
   }
 
-  await Post.findByIdAndDelete(req.params.id).exec();
+  await Post.findByIdAndDelete(req.params.id);
 
   res.status(204).send();
 };
