@@ -9,7 +9,7 @@ const postSchema = new mongoose.Schema(
       type: String,
     },
     userId: {
-      type: mongoose.Schema.Types.ObjectId, // bonus
+      type: mongoose.Schema.Types.ObjectId,
       ref: "User",
     },
   },
@@ -17,7 +17,6 @@ const postSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
-
 
 const Post = mongoose.model("Post", postSchema);
 
