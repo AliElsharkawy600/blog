@@ -8,10 +8,6 @@ const updatePost = async (req, res) => {
     throw new CustomError("No posts Found", 404);
   }
 
-  if (post.userId.toString() !== req.user.userId) {
-    throw new CustomError("You cannot update the post you did not create", 400);
-  }
-
   const updatedPost = await Post.findByIdAndUpdate(
     req.params.id,
     { ...req.body, userId: req.user.userId },

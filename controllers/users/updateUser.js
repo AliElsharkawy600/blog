@@ -1,15 +1,8 @@
 const User = require("./../../models/users");
-const { isValidObjectId } = require("mongoose");
 const CustomError = require("./../../utils/customError");
-
-
-
 
 const updateUser = async (req, res) => {
   const { id } = req.params;
-  if (!isValidObjectId(id)) {
-    throw new CustomError("Invalid ID", 400);
-  }
   const { name, email } = req.body;
 
   const user = await User.findOneAndUpdate(

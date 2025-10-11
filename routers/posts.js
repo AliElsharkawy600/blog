@@ -9,7 +9,8 @@ const {
   deletePost,
 } = require("./../controllers/posts");
 
-const validator = require("../middlewares/validator");
+const validator = require("./../middlewares/validator");
+const checkOwnership = require("./../middlewares/ownership")
 const {
   createPostSchema,
   updatePostSchema,
@@ -21,8 +22,8 @@ router.get("/", auth, getPosts);
 
 router.get("/:id", auth, getPost);
 
-router.patch("/:id", auth, validator(updatePostSchema), updatePost);
+router.patch("/:id", auth, checkOwnership,validator(updatePostSchema), updatePost);
 
-router.delete("/:id", auth, deletePost);
+router.delete("/:id", auth, checkOwnership, deletePost);
 
 module.exports = router;

@@ -15,13 +15,13 @@ const logIn = async (req, res) => {
   // 1- check user with the given email exists
   const user = await User.findOne({ email });
   if (!user) {
-    throw new CustomError("Invalid Email and Password combination", 400);
+    throw new CustomError("Invalid Email or Password combination", 400);
   }
   // 2- compare hashed password from db with the given password
   const isPasswordMached = await bcrypt.compare(password, user.password);
 
   if (!isPasswordMached) {
-    throw new CustomError("Invalid Email and Password combination", 400);
+    throw new CustomError("Invalid Email or Password combination", 400);
   }
   // 3- matched ? generate JWT token
   const payload = {
