@@ -1,4 +1,5 @@
 const express = require("express");
+const auth = require("../middlewares/auth");
 const router = express.Router();
 const {
   createPost,
@@ -8,14 +9,20 @@ const {
   deletePost,
 } = require("./../controllers/posts");
 
-router.post("/", createPost);
+const validator = require("../middlewares/validator");
+const {
+  createPostSchema,
+  updatePostSchema,
+} = require("../utils/schemas/posts");
 
-router.get("/", getPosts);
+router.post("/", auth, validator(createPostSchema), createPost);
 
-router.get("/:id", getPost);
+router.get("/", auth, getPosts);
 
-router.patch("/:id", updatePost);
+router.get("/:id", auth, getPost);
 
-router.delete("/:id", deletePost);
+router.patch("/:id", auth, validator(updatePostSchema), updatePost);
+
+router.delete("/:id", auth, deletePost);
 
 module.exports = router;

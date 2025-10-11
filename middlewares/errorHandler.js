@@ -31,6 +31,18 @@ module.exports = (err, req, res, next) => {
     });
   }
 
+    // JWT errors
+  if (
+    err.name === "JsonWebTokenError" ||
+    err.name === "TokenExpiredError" ||
+    err.name === "NotBeforeError"
+  ) {
+    return res.status(401).json({
+      status: "error",
+      message: "Invalid or expired token",
+    });
+  }
+
   // custom error
   if (err instanceof CustomError) {
     return res.status(err.statusCode).json({

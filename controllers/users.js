@@ -1,6 +1,14 @@
 const User = require("../models/users");
 const { isValidObjectId } = require("mongoose");
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
+const {promisify} = require("util")
 const CustomError = require("../utils/customError");
+
+// promisify jwt.sign
+
+const jwtSign = promisify(jwt.sign);
+
 
 const getAllUsers = async (req, res) => {
   const { page = 1, limit = 10 } = req.query;
@@ -49,27 +57,58 @@ const getUserById = async (req, res) => {
   });
 };
 
-const createUser = async (req, res) => {
-  const { name, email, password } = req.body;
+const signUp = async (req, res) => {
+  const { name, email, password, profilePicture } = req.body;
 
-  if (!name) {
-    throw new CustomError("Name is required", 400);
-  }
-  if (!email) {
-    throw new CustomError("email is required", 400);
-  }
-  if (!password) {
-    throw new CustomError("password is required", 400);
-  }
+  // hash password
+  const saltRounds = +process.env.SALT_ROUNDS;
+  const hashedPassword = await bcrypt.hash(password, saltRounds);
 
-  const newUser = await User.create({ name, email, password });
+  const newUser = await User.create({
+    name,
+    email,
+    password: hashedPassword,
+    profilePicture,
+  });
+
   const savedUser = newUser.toObject();
   delete savedUser.password;
 
-  res.json({
+  res.status(201).json({
     status: "success",
     message: "User created successfully",
     data: savedUser,
+  });
+};
+
+const logIn = async (req, res) => {
+  const { email, password } = req.body;
+
+  // 1- check user with the given email exists
+  const user = await User.findOne({ email });
+  if (!user) {
+    throw new CustomError("Invalid Email and Password combination", 400);
+  }
+  // 2- compare hashed password from db with the given password
+  const isPasswordMached = await bcrypt.compare(password, user.password);
+
+  if (!isPasswordMached) {
+    throw new CustomError("Invalid Email and Password combination", 400);
+  }
+  // 3- matched ? generate JWT token
+  const payload = {
+    id: user._id,
+    email: user.email,
+    role: user.role,
+  };
+  const secretKey = process.env.JWT_SECRET_KEY;
+
+  const token = await jwtSign(payload, secretKey, { expiresIn: "1d" });
+
+  return res.status(200).json({
+    status: "success",
+    message: "User logged in successfully",
+    data: { token },
   });
 };
 
@@ -111,7 +150,7 @@ const deleteUser = async (req, res) => {
   const user = await User.findOneAndDelete({ _id: id });
 
   if (!user) {
-   throw new CustomError("User Not Found", 404);
+    throw new CustomError("User Not Found", 404);
   }
 
   return res.status(204).send();
@@ -120,7 +159,8 @@ const deleteUser = async (req, res) => {
 module.exports = {
   getAllUsers,
   getUserById,
-  createUser,
+  signUp,
+  logIn,
   updateUser,
   deleteUser,
 };

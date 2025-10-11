@@ -1,7 +1,7 @@
 const Post = require("./../models/posts");
-
+const CustomError = require("../utils/customError")
 const createPost = async (req, res) => {
-  const posts = await Post.create(req.body);
+  const posts = await Post.create({...req.body, userId: req.user.userId});
   res.status(201).json({
     status: "success",
     message: "Posts Created successfully",
@@ -16,7 +16,16 @@ const getPosts = async (req, res) => {
   const totalPromise = Post.countDocuments();
   const postsPromise = Post.find().skip(skip).limit(limit);
 
+  
   const [posts, total] = await Promise.all([postsPromise, totalPromise]);
+  
+  // adding is the owner of the post
+  const postsWithOwner = posts.map(post =>({
+    ...post.toObject(),
+    isOwner: post.userId.toString() === req.user.userId
+  }))
+
+  console.log(postsWithOwner);
 
   if (!posts) {
     return res.status(404).json({
@@ -35,7 +44,7 @@ const getPosts = async (req, res) => {
   res.status(200).json({
     status: "success",
     message: "Posts fetched successfully",
-    data: posts,
+    data: postsWithOwner,
     pagination,
   });
 };
@@ -52,39 +61,65 @@ const getPost = async (req, res) => {
     });
   }
 
+    // adding is the owner of the post
+  const postsWithOwner = {
+    ...post.toObject(),
+    isOwner: post.userId._id.toString() === req.user.userId
+  }
+
   res.status(200).json({
     status: "success",
     message: "Post fetched successfully",
-    data: post,
+    data: postsWithOwner,
   });
 };
 
 const updatePost = async (req, res) => {
-  const post = await Post.findByIdAndUpdate(req.params.id, req.body, {
-    new: true,
-    runValidators: true,
-  });
+
+  const post = await Post.findById(req.params.id).exec();
+
   if (!post) {
     return res.status(404).json({
       status: "failure",
       message: "No posts Found",
     });
   }
+
+  if(post.userId.toString() !== req.user.userId){
+    throw new CustomError("You cannot update the post you did not create", 400);
+  }
+
+  const updatedPost = await Post.findByIdAndUpdate(req.params.id, {...req.body, userId:req.user.userId}, {
+    new: true,
+    runValidators: true,
+  });
+
+
   res.status(200).json({
     status: "success",
     message: "Post updated successfully",
-    data: post,
+    data: updatedPost,
   });
 };
 
 const deletePost = async (req, res) => {
-  const post = await Post.findByIdAndDelete(req.params.id);
+
+
+  const post = await Post.findById(req.params.id).exec();
+
   if (!post) {
     return res.status(404).json({
       status: "failure",
       message: "No posts Found",
     });
   }
+
+  if(post.userId.toString() !== req.user.userId){
+    throw new CustomError("You cannot delete the post you did not create", 400);
+  }
+
+  await Post.findByIdAndDelete(req.params.id).exec();
+
   res.status(204).send();
 };
 

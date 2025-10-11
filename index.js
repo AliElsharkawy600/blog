@@ -1,28 +1,41 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
+const helmet = require("helmet");
+const { xss } = require("express-xss-sanitizer");
+const hpp = require("hpp");
 const dotenv = require('dotenv')
+
 const usersRouter = require("./routers/users");
 const postsRouter = require("./routers/posts");
 
 const errorHandler = require('./middlewares/errorHandler');
 const rateLimiter = require('./middlewares/rateLimiter');
+const CustomError = require("./utils/customError");
 
 const app = express();
+const V1_PREFIX = "/api/v1";
 
 
 
 // middleware to parse json body
 app.use(express.json());
 app.use(cors());
-app.use(rateLimiter)
+app.use(rateLimiter);
+app.use(helmet());
+app.use(xss());
+app.use(hpp());
 
 dotenv.config();
 
 // routes
-app.use("/users", usersRouter);
-app.use('/posts',postsRouter)
+app.use(`${V1_PREFIX}/users`, usersRouter);
+app.use(`${V1_PREFIX}/posts`,postsRouter)
 
+// not found route
+app.use((req, res) => {
+  throw new CustomError("Route not found", 404);
+});
 
 
 // global Error Handeller 

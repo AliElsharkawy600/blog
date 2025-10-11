@@ -2,28 +2,37 @@ const { Router } = require("express");
 const {
   getAllUsers,
   getUserById,
-  createUser,
+  signUp,
+  logIn,
   updateUser,
   deleteUser,
 } = require("../controllers/users");
-const { createUserSchema } = require("../utils/schemas");
+const auth = require("../middlewares/auth")
+const { loginSchema, signUpSchema } = require("../utils/schemas/users");
+const restrictTo = require("../middlewares/restrictTo")
 const validator = require('../middlewares/validator');
-const updateUserSchema = require("../utils/schemas/updateUserSchema");
 
 const router = Router();
+
+
+// auth routes
+router.post("/signup", validator(signUpSchema), signUp);
+
+router.post("/login", validator(loginSchema), logIn);
+
+
+
 // /users
 // get all users
-router.get("/", getAllUsers);
+router.get("/", auth, restrictTo("admin") ,getAllUsers);
 
 // get user by id
-router.get("/:id", getUserById);
+router.get("/:id", auth, restrictTo("admin"), getUserById);
 
-// create user
-router.post("/", validator(createUserSchema), createUser);
-
-router.patch("/:id",validator(updateUserSchema), updateUser);
+// update User
+router.patch("/:id", auth, restrictTo("admin"), updateUser);
 
 // delete user
-router.delete("/:id", deleteUser);
+router.delete("/:id", auth, restrictTo("admin"), deleteUser);
 
 module.exports = router;

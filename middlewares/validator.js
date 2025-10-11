@@ -4,6 +4,7 @@ module.exports = (schema) => {
     const { error } = schema.validate(req.body, { abortEarly: true });
 
     if (error) {
+      // console.log(error);
       throw new CustomError(error.message, 400);
     }
     next();
